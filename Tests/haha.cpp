@@ -9,5 +9,5 @@ myClass::~myClass()
 }
 
 int myClass::lesgo(){
-    return this->count+989;
+    return this->count+99;
 }
