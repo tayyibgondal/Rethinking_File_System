@@ -1,9 +1,11 @@
 import sys
-from fileFunctions import FileFunctions
 
-# global lists of directory and file objects
-directory_objects = []
-file_objects = []
+class FileFunctions:
+    def __init__(self, path):
+        self.path = path
+    
+    def __str__(self):
+        return self.path
 
 class DirectoryFunctions:
     def __init__(self, path):
@@ -11,10 +13,10 @@ class DirectoryFunctions:
         self.file_indices = []
         self.path = path
 
-    def open(dirName, currentPath):
+    def open(self, dirName, currentPath):
         return currentPath + '/' + dirName
 
-    def list_files_and_directories(currentPath):
+    def list_files_and_directories(self, currentPath):
         # find the directory object from global list of 
         # directories (using path sent by user prompt class)
         for directory_object in directory_objects:
@@ -22,30 +24,32 @@ class DirectoryFunctions:
                 break
         # Print all directores 
         for directory_idx in directory_object.directory_indices:
-            print(directory_objects[directory_idx].__str__())
+            print(directory_objects[directory_idx].__str__(), '(directory)')
         # Print all files
         for file_idx in directory_object.file_indices:
-            print(file_objects[file_idx].__str__())
+            print(file_objects[file_idx].__str__(), '(file)')
 
     def mkdir(self, name, curr_path):
         # Create new directory object
         complete_path = curr_path + '/' + name
         directory = DirectoryFunctions(complete_path)
 
-        # add it to global list of files
-        index = 0
-        for directory_object in directory_objects:
-            if directory_object == None:
-                directory_objects[index] = directory
+        # add it to global list of directories
+        for i in range(0, len(directory_objects)+1):
+            if i < len(directory_objects) and directory_objects[i] == None:
+                directory_objects[i] = directory
                 break
-            index += 1
-        if index == len(file_objects):
+        if i == len(directory_objects):
             directory_objects.append(directory)
 
-        # Update file indices list of current directory
-        self.directory_indices.append(index)
+        # Update directory indices list of source directory
+        for directory_object in directory_objects:
+            if directory_object.__str__() == curr_path:
+                directory_object.directory_indices.append(i)
 
     def rmdir(self, name, path):
+        # the current directory's path is 'path'
+        # the directory to be deleted is 'name'
         complete_path = path + '/' + name
         # deleting directory form global list of directories
         temp = None
@@ -57,17 +61,17 @@ class DirectoryFunctions:
         
         # Updating directory indices of directory which contained the deleted directory
         for i in range(0, len(directory_objects)):
-            if directory_objects[i].__str__() == path:
-                for j in range(0, directory_objects[i].directory_indices):
+            if directory_objects[i].__str__() == path:  # i.e., parent directory
+                for j in range(0, len(directory_objects[i].directory_indices)):
                     if directory_objects[i].directory_indices[j] == temp:
                         del directory_objects[i].directory_indices[j]
                         break
                 break
         
-    def chdir(dirPath):
+    def chdir(self, dirPath):
         return dirPath
 
-    def move(src_name, curr_path, dest_path):
+    def move(self, src_name, curr_path, dest_path):
         # Moves file from current directory to dest directory
         src_path = curr_path + '/' + src_name
         temp_idx = None
@@ -77,6 +81,7 @@ class DirectoryFunctions:
         for file_object in file_objects:
             if file_object.__str__() == src_path:
                 temp_idx = index
+                break
             index += 1
         # Now move this index from one directory's file 
         # indices list to the destination directory's file
@@ -103,46 +108,56 @@ class DirectoryFunctions:
         file = FileFunctions(complete_path)
 
         # add it to global list of files
-        index = 0
-        for file_object in file_objects:
-            if file_object == None:
-                file_objects[index] = file
+        for i in range(0, len(file_objects)+1):
+            if i < len(file_objects) and file_objects[i] == None:
+                file_objects[i] = file
                 break
-            index += 1
-
-        if index == len(file_objects):
+        if i == len(file_objects):
             file_objects.append(file)
 
         # Update file indices list of current directory
-        self.file_indices.append(index)
+        # Update directory indices list of source directory
+        for directory_object in directory_objects:
+            if directory_object.__str__() == curr_path:
+                directory_object.file_indices.append(i)
 
     def delete_file(self, name, curr_path):
         # delete new file object
+
+        # 'name' is the name of file to be deleted
+        # 'curr_path' is path of current directory
         complete_path = curr_path + '/' + name
 
         # find form global list of files and remove
-        index = 0
-        for file_object in file_objects:
-            if file_object.__str__() == complete_path:
-                file_objects[index] = None
+        temp = None
+        for i in range(0, len(file_objects)):
+            if file_objects[i].__str__() == complete_path:
+                file_objects[i] = None
+                temp = i
                 break
-            index += 1
 
         # find the directory which contained this file
-        # and remove the index of file to be deleted from
+        # and remove the index of file to be deleted from``
         # its list of file indices
         for dir_object in directory_objects:
             if dir_object.__str__() == curr_path:
                 for i in range(0, len(dir_object.file_indices)):
-                    if dir_object.file_indices[i] == index:
+                    if dir_object.file_indices[i] == temp:
                         del dir_object.file_indices[i] 
                         break
                 break
 
-        # Update file indices list of current directory
-        self.file_indices.append(index)
+    def getRootDirectory(self):
+        root = None
+        for directory_obj in directory_objects:
+            if directory_obj.__str__() == 'root':
+                root = directory_obj
+        return root
 
-    def show_memory_map():
+    def show_memory_map(self):
+        pass
+
+    def save_system_state(self):
         pass
 
     def __str__(self):
@@ -153,9 +168,9 @@ class UserPrompt:
     # constructor
     # =========================================
     def __init__(self):
-        self.directory_funcs = DirectoryFunctions()
-        self.file_funcs = FileFunctions()
-        self.curr_dir = None
+        self.directory_funcs = DirectoryFunctions("root")
+        self.file_funcs = FileFunctions(None)
+        self.curr_dir = 'root'
         self.curr_file = None
         # prompting user
         exit_status = 1
@@ -207,7 +222,7 @@ class UserPrompt:
         elif choice == "5": # move file
             srcName = input("Enter source file name: ")
             destPath = input("Enter destination path: ")
-            # self.directory_funcs.move(srcName, self.curr_dir, destPath)
+            self.directory_funcs.move(srcName, self.curr_dir, destPath)
             print("file moved")
 
         elif choice == "6":  # select a file
@@ -220,7 +235,7 @@ class UserPrompt:
 
         elif choice == "7":  # create new file
             fName = input("enter name of the file: ")
-            # self.directory_funcs.create_file(fName, self.curr_dir)
+            self.directory_funcs.create_file(fName, self.curr_dir)
 
         elif choice == "8":  # show memory map
             print("Memory map is: ")
@@ -330,5 +345,8 @@ class UserPrompt:
             print("file closed!")
             return -1
 
+# global lists of directory and file objects
+directory_objects = [DirectoryFunctions("root")]
+file_objects = []
 UserPrompt()
            
