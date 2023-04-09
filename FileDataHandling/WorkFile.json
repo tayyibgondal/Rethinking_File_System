@@ -1,0 +1,11 @@
+{
+    "Storage": {
+        "BLOCKCOUNT": 3,
+        "BLOCKSIZE": 5,
+        "Block": [
+            "12345",
+            "",
+            "DA\nSH"
+        ]
+    }
+}
