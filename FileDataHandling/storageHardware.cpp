@@ -4,19 +4,21 @@
 #include <string>
 using json = nlohmann::json;
 
-LabSH::storageHardware::storageHardware(int blockSize, int blockCount)
-    : BLOCKSIZE(blockSize), BLOCKCOUNT(blockCount), block(blockCount, "")
+// TODO: Update whole structure of StorageHardware
+
+LabSH::storageHardware::storageHardware(storageHardwareConst const &sysConst)
+    : SysConst(sysConst)
 {
 }
 
-LabSH::storageHardware::storageHardware(int blockSize, int blockCount, const std::vector<std::string> &array)
-    : BLOCKSIZE(blockSize), BLOCKCOUNT(blockCount), block(array)
+LabSH::storageHardware::storageHardware(storageHardwareConst const &sysConst, const std::vector<std::string> &array)
+    : SysConst(sysConst), block(array)
 {
 }
 
 bool LabSH::storageHardware::writeBlock(int ID, std::string data)
 {
-    if (data.length() <= BLOCKSIZE)
+    if (data.length() <= SysConst.BLOCKSIZE)
     {
         block.at(ID) = data;
         return true;
@@ -32,17 +34,17 @@ std::string LabSH::storageHardware::readBlock(int ID) const
 json LabSH::StorageHardware::to_json(const storageHardware &storage)
 {
     json j;
-    j["BLOCKSIZE"] = storage.BLOCKSIZE;
-    j["BLOCKCOUNT"] = storage.BLOCKCOUNT;
+    j["BLOCKSIZE"] = storage.SysConst.BLOCKSIZE;
+    j["BLOCKCOUNT"] = storage.SysConst.BLOCKCOUNT;
     j["Block"] = storage.block;
     return j;
 }
 
-LabSH::storageHardware LabSH::StorageHardware::from_json(const json &j)
-{
+// LabSH::storageHardware LabSH::StorageHardware::from_json(const json &j)
+// {
 
-    return storageHardware(j["BLOCKSIZE"].get<int>(), j["BLOCKCOUNT"].get<int>(), j["Block"].get<std::vector<std::string>>());
-}
+//     return storageHardware(j["BLOCKSIZE"].get<int>(), j["BLOCKCOUNT"].get<int>(), j["Block"].get<std::vector<std::string>>());
+// }
 
 void LabSH::StorageHardware::write_to_file(storageHardware const &storage, std::string const &fname)
 {

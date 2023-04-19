@@ -5,17 +5,58 @@
 
 namespace LabSH
 {
+    typedef enum
+    {
+        LabFILE,
+        LabDir,
+        LabBlock
+    } nodeType;
+
+    struct storageHardwareConst
+    {
+        int const BLOCKCOUNT,
+            BLOCKSIZE, // interms of char
+            FnodeCount,
+            DnodeCount,
+            FileMaxBlockCount, // interms of maxBlocks
+            DirectorySize;     // interms of max name:inode pairs
+        storageHardwareConst(int blockCount, int blockSize, int fnodeCount, int dnodeCount, int maxBlockCount, int directorySize)
+            : BLOCKCOUNT(blockCount), BLOCKSIZE(blockSize), FnodeCount(fnodeCount), DnodeCount(dnodeCount), FileMaxBlockCount(maxBlockCount), DirectorySize(directorySize)
+        {
+        }
+        int getFileMaxCharCount() const { return FileMaxBlockCount * BLOCKSIZE; }
+    };
+
+    struct inode
+    {
+        nodeType type;
+        inode(nodeType type) : type(type) {}
+    };
+    struct fnode : public inode
+    {
+        fnode(int maxBlockCount) // Default constructor
+            : inode(LabFILE), blockIdList(maxBlockCount, NULL), size(0), blockCount(0)
+        {
+        }
+        fnode(int maxBlockCount, int blockCount, int size, const std::vector<int> &array)
+            : inode(LabFILE), blockIdList(maxBlockCount, NULL), size(0), blockCount(0) {}
+        int blockCount; // Starts at 0
+        int size;       // Number of characters
+        std::vector<int> blockIdList;
+    };
+
     class storageHardware
     {
     private:
         std::vector<std::string> block;
-        int const BLOCKSIZE, BLOCKCOUNT;
+        std::vector<fnode> fnodeList;
 
         friend class StorageHardware;
 
     public:
-        storageHardware(int blockSize, int blockCount);
-        storageHardware(int blockSize, int blockCount, const std::vector<std::string> &array);
+        storageHardwareConst const SysConst;
+        storageHardware(storageHardwareConst const &sysConst);
+        storageHardware(storageHardwareConst const &sysConst, const std::vector<std::string> &array);
         bool writeBlock(int ID, std::string data);
         std::string readBlock(int ID) const;
     };
