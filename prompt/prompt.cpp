@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <sstream> // for parsing
 using namespace std;
@@ -8,34 +9,44 @@ class FileSystemPrompt
 public:
     FileSystemPrompt() {}
 
-    void Run()
+    void Run(const string& filename)
+{
+    ifstream infile(filename);
+    if (!infile)
     {
-        cout << "Welcome to the File System prompt!" << endl;
-        cout << "Type 'help' for a list of available commands." << endl;
-
-        string input;
-        while (true)
-        {
-            cout << "> ";
-            getline(cin, input);
-
-            if (input == "help")
-            {
-                PrintHelp();
-            }
-            else if (input == "quit")
-            {
-                // To DO: Save state
-                break;
-            }
-            else
-            {
-                ExecuteCommand(input);
-            }
-        }
-
-        cout << "Goodbye!" << endl;
+        cerr << "Error opening file: " << filename << endl;
+        return;
     }
+
+    cout << "==============================================" << endl;
+    cout << "Welcome to the File System prompt!" << endl;
+    cout << "Type 'help' for a list of available commands." << endl;
+    cout << "==============================================" << endl;
+
+    string input;
+    while (getline(infile, input))
+    {
+        cout << endl;
+        cout << "> " << input << endl;
+
+        if (input == "help")
+        {
+            PrintHelp();
+        }
+        else if (input == "quit")
+        {
+            // To DO: Save state
+            break;
+        }
+        else
+        {
+            ExecuteCommand(input);
+        }
+    }
+
+    cout << endl;
+    cout << "Goodbye!" << endl;
+}
 
 private:
     void PrintHelp()
@@ -146,8 +157,24 @@ private:
     }
 };
 
+class outToFile {
+public: 
+    outToFile() {}
+
+    void appendStringToFile(const std::string& str, const std::string& filename) {
+        // Open the file for appending
+        std::ofstream outfile(filename, std::ios::app);
+
+        // Write the string to the file
+        outfile << str;
+
+        // Close the file
+        outfile.close();
+    }
+};
+
 int main()
 {
     FileSystemPrompt f = FileSystemPrompt();
-    f.Run();
+    f.Run("file.txt");
 }
