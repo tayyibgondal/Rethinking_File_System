@@ -1,0 +1,16 @@
+[ ]: User access details will be part of Dnode entries
+
+TODO: User Prompt
+    [ ]: Path Validation follow proper format
+
+TODO: File Management System
+
+    [ ]: Path Verification (i.e. path exists)
+    bool createDir(std::string dirName);
+    bool changeDir(std::string dirName);
+    bool moveFile(std::string source_fname, std::string target_fname);
+
+    bool openFile(std::string fname, char mode);
+    bool closeFile(std::string fname);
+    
+    bool Show_memory_map();

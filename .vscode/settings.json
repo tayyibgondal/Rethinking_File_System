@@ -44,6 +44,19 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "typeinfo": "cpp",
-        "fstream": "cpp"
-    }
+        "fstream": "cpp",
+        "chrono": "cpp",
+        "codecvt": "cpp",
+        "cstring": "cpp",
+        "ctime": "cpp",
+        "forward_list": "cpp",
+        "map": "cpp",
+        "ratio": "cpp",
+        "iomanip": "cpp",
+        "sstream": "cpp",
+        "valarray": "cpp"
+    },
+    "todo-tree.tree.showBadges": false,
+    "todo-tree.tree.showCountsInTree": false,
+    "todo-tree.tree.disableCompactFolders": true
 }
