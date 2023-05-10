@@ -2,51 +2,54 @@
 #include <fstream>
 #include <string>
 #include <sstream> // for parsing
+#include "FileManagementSystem.h"
+
 using namespace std;
 
 class FileSystemPrompt
 {
+private:
 public:
     FileSystemPrompt() {}
 
-    void Run(const string& filename)
-{
-    ifstream infile(filename);
-    if (!infile)
+    void Run(const string &filename)
     {
-        cerr << "Error opening file: " << filename << endl;
-        return;
-    }
+        ifstream infile(filename);
+        if (!infile)
+        {
+            cerr << "Error opening file: " << filename << endl;
+            return;
+        }
 
-    cout << "==============================================" << endl;
-    cout << "Welcome to the File System prompt!" << endl;
-    cout << "Type 'help' for a list of available commands." << endl;
-    cout << "==============================================" << endl;
+        cout << "==============================================" << endl;
+        cout << "Welcome to the File System prompt!" << endl;
+        cout << "Type 'help' for a list of available commands." << endl;
+        cout << "==============================================" << endl;
 
-    string input;
-    while (getline(infile, input))
-    {
+        string input;
+        while (getline(infile, input))
+        {
+            cout << endl;
+            cout << "> " << input << endl;
+
+            if (input == "help")
+            {
+                PrintHelp();
+            }
+            else if (input == "quit")
+            {
+                // To DO: Save state
+                break;
+            }
+            else
+            {
+                ExecuteCommand(input);
+            }
+        }
+
         cout << endl;
-        cout << "> " << input << endl;
-
-        if (input == "help")
-        {
-            PrintHelp();
-        }
-        else if (input == "quit")
-        {
-            // To DO: Save state
-            break;
-        }
-        else
-        {
-            ExecuteCommand(input);
-        }
+        cout << "Goodbye!" << endl;
     }
-
-    cout << endl;
-    cout << "Goodbye!" << endl;
-}
 
 private:
     void PrintHelp()
@@ -157,11 +160,13 @@ private:
     }
 };
 
-class outToFile {
-public: 
+class outToFile
+{
+public:
     outToFile() {}
 
-    void appendStringToFile(const std::string& str, const std::string& filename) {
+    void appendStringToFile(const std::string &str, const std::string &filename)
+    {
         // Open the file for appending
         std::ofstream outfile(filename, std::ios::app);
 
