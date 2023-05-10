@@ -220,5 +220,6 @@ void LabFO::FileOperator::clearFile()
         fileNode.blockCount--;
         BManager.setFreeBlock(blockID);
     }
+    fileNode.size = 0;
     saveFNode();
 }

@@ -1,5 +1,4 @@
-#include "FileOperator.h"
-#include <list>
+#include "../FileDataHandling/FileOperator.h"
 
 namespace LabFMS
 {
@@ -38,6 +37,7 @@ namespace LabFMS
         bool read_from_file(int fnodeID, std::string &output, int start, int size);
         bool move_within_file(int fnodeID, int start, int size, int target);
         bool truncate_file(int fnodeID, int maxSize);
+        bool clear_file(int fnodeID);
     };
 
     class FileManagementSystem
@@ -67,7 +67,13 @@ namespace LabFMS
 
         int getFileIndoeID(std::string filePath);
 
+        /// @param inode
+        /// @param parentDnodeID Test for existance of Dnode at this ID before passing
+        bool removeInodeEntry(int inode, int parentDnodeID);
+
         bool createObj(std::string objName, LabSH::nodeType objType);
+
+        void Show_memory_map(std::stringstream &output, int PDNodeID = 0, bool recursive = true, std::string pad = ">");
 
     public:
         FileManagementSystem(LabSH::storageHardware &SSD);
@@ -77,7 +83,8 @@ namespace LabFMS
 
         bool createDir(std::string dirName);
         // bool changeDir(std::string dirName); Not Such thing
-        // [ ] bool moveFile(std::string source_fname, std::string target_fname);
+
+        bool moveFile(std::string source_fname, std::string target_fname);
 
         bool openFile(std::string fname, char mode);
         bool closeFile(std::string fname);
@@ -89,6 +96,6 @@ namespace LabFMS
         bool move_within_file(std::string fname, int start, int size, int target);
         bool truncate_file(std::string fname, int maxSize);
 
-        //[ ] bool Show_memory_map();
+        std::string Show_memory_map();
     };
 }

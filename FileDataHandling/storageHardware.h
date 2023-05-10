@@ -1,16 +1,17 @@
 #pragma once
 #include <vector>
+#include <list>
 #include <nlohmann/json.hpp>
 // using json = nlohmann::json;
 
 namespace LabSH
 {
-    typedef enum
+    typedef enum : char
     {
-        LabInode,
-        LabFile,
-        LabDir,
-        LabBlock
+        LabInode = 'I',
+        LabFile = 'F',
+        LabDir = 'D',
+        LabBlock = 'B'
     } nodeType;
 
     struct storageHardwareConst
@@ -88,13 +89,13 @@ namespace LabSH
     struct dnode : public inode
     {
         int inodeCount; // initialised at 0
-        std::vector<InodeEntry> inodeEntry;
+        std::list<InodeEntry> inodeEntry;
 
         dnode(int DirectorySize)
             : inode(LabDir), inodeCount(0)
         {
         }
-        dnode(int DirectorySize, const std::vector<InodeEntry> &inodeEntry)
+        dnode(int DirectorySize, const std::list<InodeEntry> &inodeEntry)
             : inode(LabDir), inodeCount(0), inodeEntry(inodeEntry)
         {
         }
@@ -116,7 +117,7 @@ namespace LabSH
         std::vector<inode *> inodePList;
         FreeSpaceManagerData FSMD;
 
-        friend class StorageHardware;
+        friend class StorageHardwareJson;
 
     public:
         storageHardwareConst const SysConst;

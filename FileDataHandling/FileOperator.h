@@ -1,7 +1,7 @@
 #include "FreeSpaceManager.h"
 #include <string>
 #include <cmath>
-// It includes "storageHardware.h"
+
 namespace LabFO
 {
     class FileOperator

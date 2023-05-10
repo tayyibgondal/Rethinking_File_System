@@ -56,7 +56,7 @@ private:
         cout << "  Write_to_file <filename> <text> <startLocation>" << endl;
         cout << "  Read_from_file <filename> <start> <size>" << endl;
         cout << "  Truncate_file <filename> <maxSize>" << endl;
-        // [ ] cout << "  Show_memory_map" << endl;
+        cout << "  SMM" << endl;
         cout << "  Help" << endl;
         cout << "  Quit" << endl;
     }
@@ -86,7 +86,7 @@ private:
         }
         else if (command == "Move")
         {
-            cout << "fileSystemObject.MoveFile(arg1, arg2);";
+            cout << "Result: " << FMS.moveFile(arg1, arg2) << endl;
         }
         else if (command == "Open")
         {
@@ -136,9 +136,9 @@ private:
             int maxSize = stoi(arg2);
             cout << "fileSystemObject.TruncateFile" << FMS.truncate_file(arg1, maxSize) << endl;
         }
-        else if (command == "Show_memory_map")
+        else if (command == "SMM")
         {
-            cout << "fileSystemObject.ShowMemoryMap();";
+            cout << FMS.Show_memory_map();
         }
         else if (command == "Help")
         {

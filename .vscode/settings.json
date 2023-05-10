@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "TODO": "plaintext",
         "string": "cpp",
         "array": "cpp",
         "atomic": "cpp",
@@ -54,9 +55,16 @@
         "ratio": "cpp",
         "iomanip": "cpp",
         "sstream": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "list": "cpp",
+        "condition_variable": "cpp",
+        "mutex": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp",
+        "thread": "cpp"
     },
     "todo-tree.tree.showBadges": false,
     "todo-tree.tree.showCountsInTree": false,
-    "todo-tree.tree.disableCompactFolders": true
+    "todo-tree.tree.disableCompactFolders": true,
+    "cmake.configureOnOpen": false
 }

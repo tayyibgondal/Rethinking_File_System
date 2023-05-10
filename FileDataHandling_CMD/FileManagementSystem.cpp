@@ -80,6 +80,20 @@ int LabFMS::FileManagementSystem::getInodeID(std::string const &name, int parent
     return -1;
 }
 
+bool LabFMS::FileManagementSystem::removeInodeEntry(int inode, int parentDnodeID)
+{
+    LabSH::dnode parentDnode = SSD.readDnode(parentDnodeID);
+    int oldSize = parentDnode.inodeEntry.size();
+    // Here inode argument is also captured, so that it can be used in anonymous function
+    parentDnode.inodeEntry.remove_if([inode](LabSH::InodeEntry ie)
+                                     { return ie.inode == inode; });
+
+    // Write back updated Dnode
+    SSD.writeDnode(parentDnodeID, parentDnode);
+
+    return oldSize != parentDnode.inodeEntry.size();
+}
+
 bool LabFMS::FileManagementSystem::createObj(std::string objName, LabSH::nodeType objType)
 {
     // Check: Inode Available
@@ -97,6 +111,10 @@ bool LabFMS::FileManagementSystem::createObj(std::string objName, LabSH::nodeTyp
 
     // Check: Parent Directory has free space
     if (parentDir.getInodeCount() >= SSD.SysConst.DirectorySize)
+        return false;
+
+    // Check: Same name object in same dir exists already
+    if (getInodeID(objName, ParentDirNodeID) != -1)
         return false;
 
     int newDnodeID = FSM.getFreeInode();
@@ -138,13 +156,18 @@ bool LabFMS::FileManagementSystem::deleteFile(std::string fname)
     if (fnodeID == -1)
         return false;
 
-    // Release blocks held by file
-    LabFO::FileOperator fileObj(FSM, SSD, fnodeID, true);
-    fileObj.clearFile();
-    fileObj.saveFNode();
+    // DO if File not already open then clear else return false
+    if (!OFT.clear_file(fnodeID))
+        return false;
 
     // Delete fnode: make inode free
     SSD.deleteNode(fnodeID);
+
+    // Mark this inode as free
+    FSM.setFreeInode(fnodeID);
+
+    // Remove from file system
+    removeInodeEntry(fnodeID, getParentDirNodeID(fname));
 
     return true;
 }
@@ -154,8 +177,50 @@ bool LabFMS::FileManagementSystem::createDir(std::string dirName)
     return createObj(dirName, LabSH::LabDir);
 }
 
+bool LabFMS::FileManagementSystem::moveFile(std::string source_fname, std::string target_fname)
+{
+    int targPDirNodeID = getParentDirNodeID(target_fname);
+    // Check: target Parent Dir Exists
+    if (targPDirNodeID == -1)
+        return false;
+
+    LabSH::dnode tParentDir = SSD.readDnode(targPDirNodeID);
+
+    // Check: Target Parent Directory has free space
+    if (tParentDir.getInodeCount() >= SSD.SysConst.DirectorySize)
+        return false;
+
+    // Check: Same name file in same dir exists already
+    if (getInodeID(target_fname, targPDirNodeID) != -1)
+        return false;
+
+    // Check: Source File exists
+    int sourceFnodeID = getFileIndoeID(source_fname);
+    if (sourceFnodeID == -1)
+        return false;
+
+    int sourcePDirNodeID = getParentDirNodeID(source_fname);
+
+    // Remove from source
+    removeInodeEntry(sourceFnodeID, sourcePDirNodeID);
+
+    // Add entry in target Directory
+    tParentDir.addEntry(LabSH::InodeEntry(target_fname, sourceFnodeID));
+
+    // Write back updated target parentDnode
+    SSD.writeDnode(targPDirNodeID, tParentDir);
+
+    return true;
+}
+
 bool LabFMS::FileManagementSystem::openFile(std::string fname, char mode)
 {
+    int fnodeID = getFileIndoeID(fname);
+
+    // Check: File Exists
+    if (fnodeID == -1)
+        return false;
+
     bool writeMode;
     switch (mode)
     {
@@ -170,46 +235,127 @@ bool LabFMS::FileManagementSystem::openFile(std::string fname, char mode)
         // invalid mode
         return false;
     }
-    return OFT.openFile(getFileIndoeID(fname), writeMode);
+    return OFT.openFile(fnodeID, writeMode);
 }
 
 bool LabFMS::FileManagementSystem::closeFile(std::string fname)
 {
-    return OFT.closeFile(getFileIndoeID(fname));
+    int fnodeID = getFileIndoeID(fname);
+
+    // Check: File Exists
+    if (fnodeID == -1)
+        return false;
+    return OFT.closeFile(fnodeID);
 }
 
 bool LabFMS::FileManagementSystem::write_to_file(std::string fname, std::string textData)
 {
-    return OFT.write_to_file(getFileIndoeID(fname), textData);
+    int fnodeID = getFileIndoeID(fname);
+
+    // Check: File Exists
+    if (fnodeID == -1)
+        return false;
+    return OFT.write_to_file(fnodeID, textData);
 }
 
 bool LabFMS::FileManagementSystem::write_to_file(std::string fname, std::string textData, int startLocation)
 {
-    return OFT.write_to_file(getFileIndoeID(fname), textData, startLocation);
+    int fnodeID = getFileIndoeID(fname);
+
+    // Check: File Exists
+    if (fnodeID == -1)
+        return false;
+    return OFT.write_to_file(fnodeID, textData, startLocation);
 }
 
 std::string LabFMS::FileManagementSystem::read_from_file(std::string fname)
 {
     std::string output;
-    OFT.read_from_file(getFileIndoeID(fname), output);
+    int fnodeID = getFileIndoeID(fname);
+
+    // Check: File Exists
+    if (fnodeID != -1)
+        OFT.read_from_file(fnodeID, output);
+
     return output;
 }
 
 std::string LabFMS::FileManagementSystem::read_from_file(std::string fname, int start, int size)
 {
     std::string output;
-    OFT.read_from_file(getFileIndoeID(fname), output, start, size);
+    int fnodeID = getFileIndoeID(fname);
+
+    // Check: File Exists
+    if (fnodeID != -1)
+        OFT.read_from_file(fnodeID, output, start, size);
     return output;
 }
 
 bool LabFMS::FileManagementSystem::move_within_file(std::string fname, int start, int size, int target)
 {
-    return OFT.move_within_file(getFileIndoeID(fname), start, size, target);
+    int fnodeID = getFileIndoeID(fname);
+
+    // Check: File Exists
+    if (fnodeID == -1)
+        return false;
+    return OFT.move_within_file(fnodeID, start, size, target);
 }
 
 bool LabFMS::FileManagementSystem::truncate_file(std::string fname, int maxSize)
 {
-    return OFT.truncate_file(getFileIndoeID(fname), maxSize);
+    int fnodeID = getFileIndoeID(fname);
+
+    // Check: File Exists
+    if (fnodeID == -1)
+        return false;
+    return OFT.truncate_file(fnodeID, maxSize);
+}
+
+std::string LabFMS::FileManagementSystem::Show_memory_map()
+{
+    std::stringstream ss;
+    ss << "ROOT" << std::endl;
+    Show_memory_map(ss, 0, true, " >");
+    return ss.str();
+}
+
+void LabFMS::FileManagementSystem::Show_memory_map(std::stringstream &output, int PDNodeID, bool recursive, std::string pad)
+{
+    LabSH::dnode Dir = SSD.readDnode(PDNodeID);
+    if (!recursive)
+    {
+        for (auto &ie : Dir.inodeEntry)
+        {
+            LabSH::inode node = SSD.readInode(ie.inode);
+            output << pad << node.type << " " << ie.inode << " " << ie.name;
+            if (node.type == LabSH::LabFile)
+            {
+                LabSH::fnode f = SSD.readFnode(ie.inode);
+                output << " " << f.getSize() << " " << f.blockCount;
+            }
+
+            output << std::endl;
+        }
+    }
+    else
+    {
+        for (auto &ie : Dir.inodeEntry)
+        {
+            LabSH::inode node = SSD.readInode(ie.inode);
+            output << pad << " " << node.type << " " << ie.inode << " " << ie.name;
+            if (node.type == LabSH::LabFile)
+            {
+                LabSH::fnode f = SSD.readFnode(ie.inode);
+                output << " " << f.getSize() << " " << f.blockCount << std::endl;
+            }
+            else // Its Dir
+            {
+                LabSH::dnode d = SSD.readDnode(ie.inode);
+                output << " " << d.getSize() << std::endl;
+                Show_memory_map(output, ie.inode, true, "   " + pad);
+            }
+        }
+    }
 }
 
 int LabFMS::OpenFileTableEntry::getFnodeID() const
@@ -351,4 +497,18 @@ bool LabFMS::OpenFileTable::truncate_file(int fnodeID, int maxSize)
         return false;
 
     return (*entrePtr).fileObj->truncateFile(maxSize);
+}
+
+bool LabFMS::OpenFileTable::clear_file(int fnodeID)
+{
+    // Check: File open
+    OpenFileTableEntry *entrePtr = getFileEntre(fnodeID);
+    if (entrePtr != nullptr)
+        return false; // Couldn't Clear Open file
+
+    // Release blocks held by file
+    LabFO::FileOperator fileObj(FBM, SSD, fnodeID, true);
+    fileObj.clearFile();
+
+    return true;
 }
