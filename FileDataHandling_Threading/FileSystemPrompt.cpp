@@ -1,5 +1,7 @@
-#include "FileSystemPrompt.h"
 #include <iostream>
+#include <fstream>
+#include <chrono>
+#include "FileSystemPrompt.h"
 
 void LabFSP::FileSystemPrompt::setUser(std::string user)
 {
@@ -173,4 +175,119 @@ void LabFSP::FSP_CMD::printHelp()
     std::cout << "  show_mem_map" << std::endl;
     std::cout << "  Help" << std::endl;
     std::cout << "  Quit" << std::endl;
+}
+
+LabFSP::FSP_Threaded::FSP_Threaded(LabFSP::FileSystemPrompt_MU &FSP, bool const &continueRun, sem_t &isFull)
+    : FSP(FSP), continueRun(continueRun), isFull(isFull)
+{
+    sem_init(&isFull, 0, 0);
+    sem_init(&jsem, 0, 1);
+
+    // Create EmptyFile
+    std::ofstream logfile("log.txt");
+    if (logfile.is_open())
+    {
+        logfile.close();
+    }
+}
+
+void LabFSP::FSP_Threaded::processJobList()
+
+{
+    std::cout << "Started Working\n";
+    while (true)
+    {
+        sem_wait(&isFull);
+        // Check whether last sem_post() was a termination call;
+        if (!continueRun)
+            break;
+        sem_wait(&jsem);
+
+        std::string input = jobs.front();
+        jobs.pop_front();
+
+        // Update output for client
+        std::string output = FSP.executeCommand(input);
+        *output_pointers.front() = output;
+        output_pointers.pop_front();
+
+        sem_post(semaphores.front());
+        semaphores.pop_front();
+        sem_post(&jsem);
+
+        // Log to file
+        time_t now = time(nullptr);
+        char timestamp[30];
+        strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
+        long int milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() % 1000;
+        char ms[4];
+        sprintf(ms, "%03ld", milliseconds);
+        std::string log_entry = std::string(timestamp) + "." + std::string(ms) + " " + input + " " + output + "\n";
+        std::ofstream logfile("log.txt", std::ios::app);
+        if (logfile.is_open())
+        {
+            logfile << log_entry;
+            logfile.close();
+        }
+    }
+    std::cout << "Stopped Working\n";
+}
+
+void LabFSP::FSP_Threaded::addJob(const std::string &job, std::string &output, sem_t *sema)
+{
+    sem_wait(&jsem);
+    jobs.push_back(job);
+    semaphores.push_back(sema);
+    output_pointers.push_back(&output);
+    sem_post(&isFull);
+    sem_post(&jsem);
+}
+
+bool LabFSP::Prompt::logOutput(std::string const &output)
+{
+    std::ofstream logfile(outputFile, std::ios::app);
+    if (logfile.is_open())
+    {
+        logfile << output;
+        logfile.close();
+        return true;
+    }
+    return false;
+}
+
+LabFSP::Prompt::Prompt(LabFSP::FSP_Threaded &multiPrompt, const std::string userID, const std::string &inputFile, std::string const &outputFile)
+    : multiPrompt(multiPrompt), inputFile(inputFile), userID(userID), outputFile(outputFile)
+{
+    sem_init(&sem, 0, 0);
+
+    // Create EmptyFile
+    std::ofstream logfile(outputFile);
+    if (logfile.is_open())
+    {
+        logfile.close();
+    }
+}
+
+void LabFSP::Prompt::run()
+{
+    std::ifstream input(this->inputFile);
+
+    if (input.is_open())
+    {
+        std::string line;
+        std::string output;
+        while (std::getline(input, line))
+        {
+            line = userID + " " + line;
+            multiPrompt.addJob(line, output, &sem);
+            sem_wait(&sem);
+            // Now it knows ans is here
+            this->logOutput(output);
+        }
+        input.close();
+    }
+    else
+    {
+        std::cout << "Unable to open file: " << this->inputFile << std::endl;
+    }
 }

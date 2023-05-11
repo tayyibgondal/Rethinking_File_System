@@ -1,0 +1,4 @@
+mkdir /home
+create /file.txt
+create /home/file.txt
+show_mem_map

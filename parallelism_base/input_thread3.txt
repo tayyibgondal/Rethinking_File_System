@@ -1,0 +1,4 @@
+mkdir /home3
+create /file3
+create /home3/file3
+show_mem_map

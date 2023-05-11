@@ -1,4 +1,6 @@
 #include "FileManagementSystem.h"
+#include <semaphore.h>
+#include <deque>
 
 /// @brief Lab: Fi;le System Prompt
 namespace LabFSP
@@ -48,4 +50,41 @@ namespace LabFSP
         void run();
         void printHelp();
     };
+
+    class FSP_Threaded
+    {
+    private:
+        LabFSP::FileSystemPrompt_MU &FSP;
+        sem_t &isFull;
+        sem_t jsem;
+        bool const &continueRun;
+        std::deque<std::string> jobs;
+        std::deque<sem_t *> semaphores;
+        std::deque<std::string *> output_pointers;
+
+    public:
+        FSP_Threaded(LabFSP::FileSystemPrompt_MU &FSP, bool const &continueRun, sem_t &isFull);
+
+        void processJobList();
+        void addJob(const std::string &job, std::string &output, sem_t *sema);
+    };
+
+    /// @brief Prompt (for muli-thread environment)
+    class Prompt
+    {
+    private:
+        std::string const userID;
+        LabFSP::FSP_Threaded &multiPrompt;
+        std::string const inputFile;
+        std::string const outputFile;
+        sem_t sem;
+
+        bool logOutput(std::string const &output);
+
+    public:
+        Prompt(LabFSP::FSP_Threaded &multiPrompt, const std::string userID, const std::string &inputFile, std::string const &outputFile);
+
+        void run();
+    };
+
 }
