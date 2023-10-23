@@ -1,0 +1,17 @@
+Dir /home creation: successful
+File /file.txt creation: successful
+File /home/file.txt creation: successful
+Memory Map:
+ROOT
+ > D 1 home 1
+    > F 9 file.txt 0 0
+ > D 2 home1 1
+    > F 10 file1 0 0
+ > D 3 home2 1
+    > F 11 file2 0 0
+ > D 4 home3 1
+    > F 12 file3 0 0
+ > F 5 file.txt 0 0
+ > F 6 file1 0 0
+ > F 7 file2 0 0
+ > F 8 file3 0 0
