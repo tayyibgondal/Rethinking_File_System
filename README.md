@@ -1,3 +1,3 @@
 # Rethinking File System
 
-Operating System Lab
+Operating System Project
