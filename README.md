@@ -1,3 +1,3 @@
 # Rethinking File System
 
-Operating System Project
+An attempt at making a file system faster, and better than Linux?
